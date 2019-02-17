@@ -1,6 +1,12 @@
 const path = require('path');
 const GasPlugin = require("gas-webpack-plugin");
 
+const opts = {
+  DEBUG: process.env.GAS_DEBUG === '1', // defaults to false
+  version: 3,
+  'ifdef-verbose': true,
+};
+
 module.exports = {
   mode: 'development',
   entry: './src/index.ts',
@@ -13,7 +19,10 @@ module.exports = {
     rules: [
       {
         test: /\.ts$/,
-        use: 'ts-loader'
+        use: [
+          { loader: 'ts-loader' }, 
+          { loader: 'ifdef-loader', options: opts } 
+       ]
       }
     ]
   },
