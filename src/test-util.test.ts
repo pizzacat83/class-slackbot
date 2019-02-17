@@ -1,4 +1,4 @@
-import { execOnGAS } from './test-util';
+import { evalOnGAS } from './test-util';
 declare const getTodaysUTAS: Function;
 
 describe('execOnGAS', () => {
@@ -6,9 +6,16 @@ describe('execOnGAS', () => {
     jest.setTimeout(1000 * 20);
   });
   it('executes code on GAS', async () => {
-    const res = await execOnGAS(function() {
+    const res = await evalOnGAS(function() {
       return 1 + 1;
     });
     expect(res).toBe(2);
+  });
+
+  it('returns nothing on invalid token', async () => {
+    const res = await evalOnGAS(function() {
+      return 1 + 1;
+    }, 'invalid token');
+    expect(res).toContain('No response');
   });
 });

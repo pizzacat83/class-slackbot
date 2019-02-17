@@ -1,14 +1,29 @@
-const { execFile } = require('child_process');
-const { promisify } = require('util');
+import { execFile } from 'child_process';
+import * as path from 'path';
+import { readFile } from 'fs';
+import { promisify } from 'util';
 
-export const execOnGAS = async (func: Function): Promise<any> => {
+let valid_token: string = '';
+
+export const evalOnGAS = async (func: Function, customToken?: string): Promise<any> => {
   const code = `(${func.toString()})()`;
+  const token =
+    customToken ||
+    valid_token ||
+    (valid_token = await promisify(readFile)(
+      path.join(__dirname, '..', 'evalOnGAS-token')
+    ).toString());
   const response = await promisify(execFile)('clasp', [
     'run',
     'evalOnGAS',
     '--params',
-    JSON.stringify(code)
+    JSON.stringify([code, token])
   ]);
-  const { res } = JSON.parse(response.stdout.replace(/.*\u001b\[1G/, ''));
-  return res;
+  const text = response.stdout.replace(/.*\u001b\[1G/, '');
+  try {
+    const { res } = JSON.parse(text);
+    return res;
+  } catch {
+    return text; // returns "No response."
+  }
 };
