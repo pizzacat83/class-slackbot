@@ -5,6 +5,7 @@ describe('execOnGAS', () => {
   beforeAll(async () => {
     jest.setTimeout(1000 * 20);
   });
+
   it('executes code on GAS', async () => {
     const res = await evalOnGAS(function() {
       return 1 + 1;
