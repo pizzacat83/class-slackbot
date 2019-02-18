@@ -13,3 +13,5 @@ global.evalOnGAS = (code: string, token: string): string => {
   }
 };
 /// #endif
+
+import './todays_utas';
