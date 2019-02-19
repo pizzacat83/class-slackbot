@@ -15,3 +15,5 @@ global.evalOnGAS = (code: string, token: string): string => {
 /// #endif
 
 import './todays_utas';
+
+import './delete_old_messages';
