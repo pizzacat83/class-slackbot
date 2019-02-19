@@ -1,4 +1,4 @@
-import { slack, sandboxId } from './common';
+import { slack, seashoreId } from './common';
 declare var global: any;
 
 global.getTodaysUTAS = (): any[] => {
@@ -14,7 +14,7 @@ global.getTodaysUTAS = (): any[] => {
 };
 
 global.postTodaysUTAS = (): void => {
-  slack.bot.postMessage(sandboxId, '', {
+  slack.bot.postMessage(seashoreId, '', {
     icon_url: 'https://pbs.twimg.com/profile_images/644153525027516416/ZDnno6rh.png',
     username: '本日のユータスくん',
     attachments: JSON.stringify(global.getTodaysUTAS())

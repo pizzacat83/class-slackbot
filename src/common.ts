@@ -11,4 +11,4 @@ export const slack = {
     token: properties.getProperty('slack-bot-token')
   })
 };
-export const sandboxId = properties.getProperty('sandboxId');
+export const seashoreId = properties.getProperty('seashore-id');
