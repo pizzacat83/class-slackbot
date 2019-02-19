@@ -6,8 +6,12 @@ global.evalOnGAS = (code: string, token: string): string => {
     Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_512, token)) ===
     PropertiesService.getScriptProperties().getProperty('evalOnGAS-token')
   ) {
-    const res: any = eval(code);
-    return JSON.stringify({ res });
+    try {
+      const res: any = eval(code);
+      return JSON.stringify({ res });
+    } catch (err) {
+      return JSON.stringify({ err });
+    }
   } else {
     return '';
   }
