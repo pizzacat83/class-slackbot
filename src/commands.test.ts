@@ -34,3 +34,31 @@ describe('slackCommands.formula', () => {
     console.log(image_url);
   });
 });
+
+describe('slackCommands.question', () => {
+  beforeAll(() => {
+    jest.setTimeout(1000 * 20);
+  });
+
+  it('returns mentions to channel on valid input', async () => {
+    const res = await evalOnGAS(function() {
+      var e = {
+        text: '<#' + PropertiesService.getScriptProperties().getProperty('seashore-id') + '> hoge'
+      };
+      return slackCommands.question(e);
+    });
+    expect(res.response_type).toBe('in_channel');
+    expect(res.text).toMatch(/^(<@U(.+)> ?)+$/);
+  });
+
+  it('returns ephemeral error message on invalid input', async () => {
+    const res = await evalOnGAS(function() {
+      var e = {
+        text: 'hoge'
+      };
+      return slackCommands.question(e);
+    });
+    expect(res.response_type).toBe('ephemeral');
+    expect(res.text).toContain('Error');
+  });
+});
