@@ -14,7 +14,32 @@ export const slack = {
 };
 export const seashoreId = properties.getProperty('seashore-id');
 
-export const listMessages = (channel: string, option: { latest?: string | number; oldest?: string | number } = {}): any[] => {
+export interface GASWebEvent {
+  queryString: string;
+  parameter: any;
+  parameters: any;
+  contentLength: number;
+  postdata: { length: number; type: string; contents: string };
+}
+
+export interface SlackCommandParams {
+  token: string;
+  team_id: string;
+  team_domain: string;
+  channel_id: string;
+  channel_name: string;
+  user_id: string;
+  user_name: string;
+  command: string;
+  text: string;
+  response_url: string;
+  trigger_id: string;
+}
+
+export const listMessages = (
+  channel: string,
+  option: { latest?: string | number; oldest?: string | number } = {}
+): any[] => {
   if (typeof option.latest === 'number') option.latest = option.latest.toFixed();
   if (typeof option.oldest === 'number') option.oldest = option.oldest.toFixed();
   const { ok, error, messages }: { ok: boolean; error?: string; messages: any[] } = slack.user.channelsHistory(channel, {
