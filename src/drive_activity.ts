@@ -131,6 +131,7 @@ const updateCheck = (since?: string): void => {
   }
   properties.setProperty('updateCheck.lastChecked', Date.now().toString());
   for (const activity of fetchAllDriveActivities(rootFolderId, since)) {
+    if (!activity) continue;
     const actionName = getActionName(activity.primaryActionDetail);
     if (ignoredActions.indexOf(actionName) !== -1) {
       continue;
