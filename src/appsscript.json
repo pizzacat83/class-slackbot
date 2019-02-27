@@ -1,6 +1,15 @@
 {
   "timeZone": "Asia/Tokyo",
   "dependencies": {
+    "enabledAdvancedServices": [{
+      "userSymbol": "People",
+      "serviceId": "peopleapi",
+      "version": "v1"
+    }, {
+      "userSymbol": "DriveActivity",
+      "serviceId": "driveactivity",
+      "version": "v2"
+    }],
     "libraries": [{
       "userSymbol": "RunAll",
       "libraryId": "1FWYhQFhL7UIAZJn-FR3TlcHvXwHPJc2HwI4vtmNUAQv2OybGe-S97Lal",
@@ -16,6 +25,7 @@
     "executeAs": "USER_DEPLOYING"
   },
   "exceptionLogging": "STACKDRIVER",
+  "oauthScopes": ["https://www.googleapis.com/auth/drive", "https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/script.external_request", "https://www.googleapis.com/auth/user.birthday.read", "https://www.googleapis.com/auth/drive.activity.readonly"],
   "executionApi": {
     "access": "MYSELF"
   }

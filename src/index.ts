@@ -39,3 +39,5 @@ import './todays_utas';
 import './delete_old_messages';
 
 import './commands';
+
+import './drive_activity';
