@@ -122,7 +122,7 @@ const { ignoredActions, colors, japaneseTranslations }: { ignoredActions: string
 const formatDateJST = (timestamp: string): string =>
   Utilities.formatDate(new Date(timestamp), 'JST', 'yyyy-MM-dd HH:mm:ss');
 
-const updateCheck = (since?: string): void => {
+const checkUpdate = (since?: string): void => {
   if (!since) {
     since = properties.getProperty('updateCheck.lastChecked');
     if (!since) {
@@ -182,4 +182,4 @@ const updateCheck = (since?: string): void => {
   }
 };
 
-global.updateCheck = updateCheck;
+global.checkUpdate = checkUpdate;

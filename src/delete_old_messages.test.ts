@@ -15,7 +15,7 @@ describe('deleteOldMessages', () => {
     const now = Date.now() / 1000;
     const messages: any[] = await evalOnGAS(function() {
       deleteOldMessages();
-      return listMessages('CATGW5XL4');
+      return listMessages(PropertiesService.getScriptProperties().getProperty('seashore-id'));
     });
     expect(messages).toBeInstanceOf(Array);
     for (const message of messages) {
