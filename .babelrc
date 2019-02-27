@@ -1,0 +1,12 @@
+{
+  "plugins": ["@babel/plugin-transform-named-capturing-groups-regex"],
+  "presets": [
+    "gas", 
+    [
+      "@babel/preset-env",
+      {
+        "useBuiltIns": "usage"
+      }
+    ]
+  ]
+}

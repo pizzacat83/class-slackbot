@@ -1,5 +1,5 @@
 const path = require('path');
-const GasPlugin = require("gas-webpack-plugin");
+const GasPlugin = require('gas-webpack-plugin');
 
 const opts = {
   DEBUG: process.env.GAS_DEBUG === '1', // defaults to false
@@ -9,7 +9,7 @@ const opts = {
 
 module.exports = {
   mode: 'development',
-  entry: './src/index.ts',
+  entry: ['./src/index.ts'],
   devtool: false,
   output: {
     filename: 'bundle.js',
@@ -20,15 +20,17 @@ module.exports = {
       {
         test: /\.ts$/,
         use: [
+          { loader: 'babel-loader' },
           { loader: 'ts-loader' }, 
           { loader: 'ifdef-loader', options: opts } 
-       ]
+        ]
       }
     ]
   },
   resolve: {
     extensions: [
-      '.ts'
+      '.ts',
+      '.js'
     ]
   },
   plugins: [
