@@ -1,5 +1,21 @@
 # class-slackbot
-Google Apps Scriptで動く，クラスSlackのbot
+Google Apps Script (GAS) で動く，クラスSlackのbot
+
+## Setup
+[gas-clasp-starter](https://github.com/pizzacat83/gas-clasp-starter#getting-started)のセットアップをする（test環境が不要であれば，その項はスキップ可）
+
+GASのスクリプトのプロパティに以下を設定する
+
+- `slack-bot-token`: botトークン
+- `slack-user-token`: 全ユーザのメッセージ削除のための管理者のトークン
+- `seashore-id`: 定期的にメッセージ削除するSlackのチャンネルのID
+- `root-folder-id`: 更新通知対象のフォルダ
+- `drivelog-id`: 更新通知するSlackのチャンネルID
+- `ignored-drive-items`: 更新通知されたくないフォルダやファイルのIDのリストのJSON
+
+```bash
+./deploy.release.sh
+```
 
 ## Licenses
 MIT License
