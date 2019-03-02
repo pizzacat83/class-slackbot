@@ -8,7 +8,7 @@ import * as DriveActivityAPI from './google_drive_activity_api';
 
 import * as PeopleAPI from './google_people_api';
 
-import { FileWrapper, FolderWrapper, ItemWrapper } from './google_drive_cache_enabled';
+import { ItemWrapper } from './google_drive_cache_enabled';
 
 const drivelog_id = properties.getProperty('drivelog-id');
 const rootFolderId = properties.getProperty('root_folder_id');
@@ -51,16 +51,20 @@ const getPersonName = (resourceName: string): string => {
   return resourceName; // TODO: a better approach?
 };
 
-const getDriveItem = (driveItemId: string, isFolder: boolean): ItemWrapper => {
+const getDriveItem = (driveItemId: string, isFolder: boolean, driveItem?: GoogleAppsScript.Drive.File|GoogleAppsScript.Drive.Folder): ItemWrapper => {
   if (driveItemsCache.has(driveItemId)) {
     return driveItemsCache.get(driveItemId);
   }
   Logger.log(driveItemId);
   let driveItemWrapper: ItemWrapper;
-  if (isFolder) {
-    driveItemWrapper = { content: DriveApp.getFolderById(driveItemId), id: driveItemId };
+  if (driveItem && !driveItemsCache.has(driveItemId)) {
+    driveItemWrapper = { content: driveItem, id: driveItemId } as ItemWrapper;
   } else {
-    driveItemWrapper = { content: DriveApp.getFileById(driveItemId), id: driveItemId };
+    if (isFolder) {
+      driveItemWrapper = { content: DriveApp.getFolderById(driveItemId), id: driveItemId };
+    } else {
+      driveItemWrapper = { content: DriveApp.getFileById(driveItemId), id: driveItemId };
+    }
   }
   driveItemsCache.set(driveItemId, driveItemWrapper);
   return driveItemWrapper;
@@ -84,8 +88,32 @@ const getDriveItemId = (target: DriveActivityAPI.Target): string => {
 const paths = new Map<string, string>();
 
 const getPath = (driveItem: ItemWrapper): string => {
-  // TODO: use full path
-  return driveItem.name || (driveItem.name = driveItem.content.getName());
+  const rec = (driveItem: ItemWrapper): { path: string; valid: boolean } => {
+    if (paths.has(driveItem.id)) {
+      return { path: paths.get(driveItem.id), valid: true };
+    }
+    if (driveItem.id == rootFolderId) {
+      return { path: '', valid: true };
+    }
+
+    const parents = driveItem.content.getParents();
+    while (parents.hasNext()) {
+      const parent = parents.next();
+      const id = parent.getId();
+      const parentWrapper = getDriveItem(id, true, parent);
+      const res = rec(parentWrapper);
+      if (res.valid) {
+        const path =
+          res.path + '/' + (driveItem.name || (driveItem.name = driveItem.content.getName()));
+        paths.set(driveItem.id, path);
+        return { path, valid: true };
+      } else {
+        return { path: '', valid: false };
+      }
+    }
+    return { path: '', valid: false };
+  };
+  return rec(driveItem).path || driveItem.name || (driveItem.name = driveItem.content.getName());
 };
 
 const driveItemsCache = new Map<string, ItemWrapper>();
@@ -137,7 +165,7 @@ const checkUpdate = (since?: string): void => {
     }
   }
   properties.setProperty('updateCheck.lastChecked', Date.now().toString());
-  for (const activity of fetchAllDriveActivities(rootFolderId, since)) {
+  for (const activity of fetchAllDriveActivities(rootFolderId, since).reverse()) {
     if (!activity) continue;
     const actionName = getActionName(activity.primaryActionDetail);
     if (ignoredActions.indexOf(actionName) !== -1) {
