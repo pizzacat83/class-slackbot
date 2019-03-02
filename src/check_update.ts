@@ -49,10 +49,9 @@ const getPersonName = (resourceName: string): string => {
     return name;
   }
   return resourceName; // TODO: a better approach?
-}
+};
 
 const getDriveItem = (driveItemId: string, isFolder: boolean): ItemWrapper => {
-  
   if (driveItemsCache.has(driveItemId)) {
     return driveItemsCache.get(driveItemId);
   }
@@ -68,8 +67,11 @@ const getDriveItem = (driveItemId: string, isFolder: boolean): ItemWrapper => {
 };
 
 const getDriveItemfromTarget = (target: DriveActivityAPI.Target): ItemWrapper => {
-    return getDriveItem(getDriveItemId(target), target.driveItem && target.driveItem.folder === undefined);
-}
+  return getDriveItem(
+    getDriveItemId(target),
+    target.driveItem && target.driveItem.folder === undefined
+  );
+};
 
 const getDriveItemId = (target: DriveActivityAPI.Target): string => {
   let itemName: string;
@@ -105,18 +107,23 @@ const isIgnoredItem = (driveItem: ItemWrapper): boolean => {
   }
 
   let parents = driveItem.content.getParents();
+  if (!parents.hasNext()) {
+    ignored.set(driveItem.id, false);
+    return false;
+  }
   while (parents.hasNext()) {
+    // 全ての親がignoredならtrue
     const parent = parents.next();
     const parentWrapper = { content: parent, id: parent.getId() };
-    if (isIgnoredItem(parentWrapper)) {
-      ignored.set(driveItem.id, true);
-      return true;
+    if (!isIgnoredItem(parentWrapper)) {
+      ignored.set(driveItem.id, false);
+      return false;
     }
   }
-  ignored.set(driveItem.id, false);
-  return false;
+  ignored.set(driveItem.id, true);
+  return true;
 };
-  
+
 const { ignoredActions, colors, japaneseTranslations }: { ignoredActions: string[], colors: {}, japaneseTranslations: {} } = require('./drive_activity_settings.json');
 
 const formatDateJST = (timestamp: string): string =>
@@ -144,8 +151,10 @@ const checkUpdate = (since?: string): void => {
 発生日時: ${
       activity.timestamp
         ? formatDateJST(activity.timestamp)
-        : formatDateJST(activity.timeRange.startTime) + ' - ' + formatDateJST(activity.timeRange.endTime)
-}`;
+        : formatDateJST(activity.timeRange.startTime) +
+          ' - ' +
+          formatDateJST(activity.timeRange.endTime)
+    }`;
     const targets: DriveActivityAPI.Target[] = activity.targets.filter(
       target => !isIgnoredItem(getDriveItemfromTarget(target))
     );
