@@ -11,7 +11,7 @@ import * as PeopleAPI from './google_people_api';
 import { ItemWrapper } from './google_drive_cache_enabled';
 
 const drivelog_id = properties.getProperty('drivelog-id');
-const rootFolderId = properties.getProperty('root_folder_id');
+const rootFolderId = properties.getProperty('root-folder-id');
 
 const fetchAllDriveActivities = (
   root_folder_id: string,
