@@ -41,7 +41,6 @@ const getActionName = (actionDetail: DriveActivityAPI.ActionDetail): string =>
 const getPersonName = (resourceName: string): string => {
   let name: string = cache.get(`getPersonName.${resourceName}`);
   if (name) return name;
-  Logger.log(resourceName);
   const person: PeopleAPI.Person = People.People.get(resourceName, { personFields: 'names' });
   if (person.names) {
     name = person.names[0].displayName;
@@ -55,7 +54,6 @@ const getDriveItem = (driveItemId: string, isFolder: boolean, driveItem?: Google
   if (driveItemsCache.has(driveItemId)) {
     return driveItemsCache.get(driveItemId);
   }
-  Logger.log(driveItemId);
   let driveItemWrapper: ItemWrapper;
   if (driveItem && !driveItemsCache.has(driveItemId)) {
     driveItemWrapper = { content: driveItem, id: driveItemId } as ItemWrapper;
