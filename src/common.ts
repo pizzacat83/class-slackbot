@@ -5,7 +5,7 @@ export const properties = PropertiesService.getScriptProperties();
 export const cache = CacheService.getScriptCache();
 
 const user_token = properties.getProperty('slack-user-token');
-const bot_token = properties.getProperty('slack-bot-token')
+const bot_token = properties.getProperty('slack-bot-token');
 
 export const slack = {
   user: SlackApp.createByClientId(null, null, null, null, {

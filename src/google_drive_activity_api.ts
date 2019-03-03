@@ -3,7 +3,7 @@ export type DriveActivityAPIResponse = {
   nextPageToken?: string;
 };
 
-export type DriveActivity  = {
+export type DriveActivity = {
   primaryActionDetail: ActionDetail;
   actors: Actor[];
   actions: Action[];
@@ -30,32 +30,37 @@ export type Action = {
   target: Target;
 } & Time;
 
-export type Target = {
-  driveItem: DriveItem;
-  teamDrive: undefined;
-  fileComment: undefined;
-} | {
-  driveItem: undefined;
-  teamDrive: TeamDrive;
-  fileComment: undefined;
-} | {
-  driveItem: undefined;
-  teamDrive: undefined;
-  fileComment: FileComment;
-};
+export type Target =
+  | {
+      driveItem: DriveItem;
+      teamDrive: undefined;
+      fileComment: undefined;
+    }
+  | {
+      driveItem: undefined;
+      teamDrive: TeamDrive;
+      fileComment: undefined;
+    }
+  | {
+      driveItem: undefined;
+      teamDrive: undefined;
+      fileComment: FileComment;
+    };
 
 export type DriveItem = {
   name: string;
   title: string;
   mimeType: string;
   owner: Owner;
-} & ({
-  file: File;
-  folder: undefined;
-} | {
-  file: undefined;
-  folder: Folder;
-});
+} & (
+  | {
+      file: File;
+      folder: undefined;
+    }
+  | {
+      file: undefined;
+      folder: Folder;
+    });
 
 export type TeamDrive = {
   name: string;
@@ -89,10 +94,12 @@ export type TimeRange = {
   endTime: string;
 };
 
-type Time = {
-  timestamp: string;
-  timeRange: undefined;
-} | {
-  timestamp: undefined;
-  timeRange: TimeRange
-};
+type Time =
+  | {
+      timestamp: string;
+      timeRange: undefined;
+    }
+  | {
+      timestamp: undefined;
+      timeRange: TimeRange;
+    };
