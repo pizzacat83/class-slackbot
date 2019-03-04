@@ -1,4 +1,4 @@
-import { properties, slack, uploadTextFileToSlack, cache } from './common';
+import { properties, slack, uploadTextFileToSlack, cache, listToObject } from './common';
 
 declare const DriveActivity: any;
 declare const People: any;
@@ -8,9 +8,12 @@ import * as DriveActivityAPI from './google_drive_activity_api';
 
 import * as PeopleAPI from './google_people_api';
 
+import * as Trello from './trello';
+
 import { ItemWrapper } from './google_drive_cache_enabled';
 
 const drivelog_id = properties.getProperty('drivelog-id');
+const drivelog_admin_id = properties.getProperty('drivelog-admin-id');
 const rootFolderId = properties.getProperty('root-folder-id');
 
 const fetchAllDriveActivities = (
@@ -68,11 +71,11 @@ const getDriveItem = (driveItemId: string, isFolder: boolean, driveItem?: Google
   return driveItemWrapper;
 };
 
+const targetIsFolder = (target: DriveActivityAPI.Target): boolean =>
+  target.driveItem && Boolean(target.driveItem.folder);
+
 const getDriveItemfromTarget = (target: DriveActivityAPI.Target): ItemWrapper => {
-  return getDriveItem(
-    getDriveItemId(target),
-    target.driveItem && target.driveItem.folder === undefined
-  );
+  return getDriveItem(getDriveItemId(target), targetIsFolder(target));
 };
 
 const getDriveItemId = (target: DriveActivityAPI.Target): string => {
@@ -162,29 +165,31 @@ const checkUpdate = (since?: string): void => {
       throw new Error('No `lastChecked`. To fix, execute updateCheck with argument `since`.');
     }
   }
-  properties.setProperty('updateCheck.lastChecked', Date.now().toString());
+  const lastChecked = Date.now();
+  const deletedItems = JSON.parse(properties.getProperty('checkUpdate.deletedItems')) || {};
   for (const activity of fetchAllDriveActivities(rootFolderId, since).reverse()) {
     if (!activity) continue;
     const actionName = getActionName(activity.primaryActionDetail);
     if (ignoredActions.indexOf(actionName) !== -1) {
       continue;
     }
-    const text = `${activity.actors
-      .map(actor => getPersonName(actor.user.knownUser.personName) + ' さん')
-      .join(', ')}が *${activity.targets.length}* 件のアイテムを *${
-      japaneseTranslations[getActionName(activity.primaryActionDetail)]
-    }* しました。
-発生日時: ${
-      activity.timestamp
-        ? formatDateJST(activity.timestamp)
-        : formatDateJST(activity.timeRange.startTime) +
-          ' - ' +
-          formatDateJST(activity.timeRange.endTime)
-    }`;
     const targets: DriveActivityAPI.Target[] = activity.targets.filter(
       target => !isIgnoredItem(getDriveItemfromTarget(target))
     );
     if (targets.length === 0) continue;
+    const actorsText = activity.actors
+      .map(actor => getPersonName(actor.user.knownUser.personName) + ' さん')
+      .join(', ');
+    const timeText = activity.timestamp
+      ? formatDateJST(activity.timestamp)
+      : formatDateJST(activity.timeRange.startTime) +
+        ' - ' +
+        formatDateJST(activity.timeRange.endTime);
+    const text = `${actorsText}が *${activity.targets.length}* 件のアイテムを *${
+      japaneseTranslations[actionName]
+    }* しました。
+発生日時: ${timeText}`;
+    let fileURL: string;
     if (targets.length <= 20) {
       // attachments
       const attachments = targets.map(target => {
@@ -203,7 +208,7 @@ const checkUpdate = (since?: string): void => {
       });
     } else {
       // snippet
-      uploadTextFileToSlack(
+      fileURL = uploadTextFileToSlack(
         [drivelog_id],
         targets
           .map(
@@ -212,9 +217,111 @@ const checkUpdate = (since?: string): void => {
           )
           .join('\n'),
         text
+      ).file.permalink;
+    }
+    if (actionName === 'delete') {
+      // trello
+      const dueDate = new Date(
+        activity.timestamp ? activity.timestamp : activity.timeRange.endTime
       );
+      dueDate.setDate(dueDate.getDate() + 3);
+      const card = Trello.request(
+        'cards',
+        { method: 'post' },
+        {
+          name: `${japaneseTranslations[actionName]} ${activity.targets.length}件 by ${actorsText}`,
+          desc: `発生日時: ${timeText}`,
+          due: Utilities.formatDate(dueDate, 'GMT', "yyyy-MM-dd'T'HH:mm:ss'Z'"),
+          idList: trelloLists.ToDo.id
+        }
+      );
+      if (targets.length <= 20) {
+        const checklist = Trello.request(
+          `cards/${card.id}/checklists`,
+          { method: 'post' },
+          { name: 'アイテム一覧' }
+        );
+        Trello.request('checklists', { method: 'post' }, { idCard: card.id, name: 'アイテム一覧' });
+        for (const target of targets) {
+          const driveItem = getDriveItemfromTarget(target);
+          Trello.request(
+            `checklists/${checklist.id}/checkItems`,
+            { method: 'post' },
+            {
+              name:
+                getPath(driveItem) +
+                (targets.length <= 20
+                  ? ' ' + driveItem.url || (driveItem.url = driveItem.content.getUrl())
+                  : '')
+            }
+          );
+        }
+      } else {
+        Trello.request(`cards/${card.id}/attachments`, { method: 'post' }, { url: fileURL });
+      }
+      deletedItems[card.id] = targets.map(target => {
+        return { id: getDriveItemId(target), isFolder: targetIsFolder(target) };
+      });
+      slack.bot.postMessage(drivelog_admin_id, card.url, { as_user: true });
+    }
+  }
+  properties.setProperty('checkUpdate.deletedItems', JSON.stringify(deletedItems));
+  properties.setProperty('updateCheck.lastChecked', lastChecked.toString());
+};
+
+let trelloLists = JSON.parse(cache.get('checkUpdate.boards'));
+if (!trelloLists) {
+  trelloLists = listToObject(
+    Trello.request(
+      `boards/${properties.getProperty('trello-drive-board-id')}/lists`,
+      { method: 'get' },
+      { fields: 'name' }
+    ),
+    'name'
+  );
+  cache.put('checkUpdate.boards', JSON.stringify(trelloLists), 21600);
+}
+
+const restoreItem = ({ id, isFolder }: { id: string; isFolder: boolean }): void => {
+  // TODO: implement
+  if (isFolder) {
+    throw new Error('Not implemented');
+  } else {
+    const deletedFile = DriveApp.getFileById(id);
+    if (deletedFile.isTrashed()) {
+      const newFile = deletedFile.makeCopy(deletedFile.getName());
+      const parents = deletedFile.getParents();
+      while (parents.hasNext()) {
+        const parent = parents.next();
+        parent.addFile(newFile);
+      }
     }
   }
 };
+
+const checkTrello = (): void => {
+  const deletedItems = JSON.parse(properties.getProperty('checkUpdate.deletedItems')) || {};
+  const doneCards = Trello.request(`lists/${trelloLists.Done.id}/cards`, { method: 'get' });
+  for (const card of doneCards) {
+    Trello.request(`cards/${card.id}`, { method: 'put' }, { closed: true });
+  }
+  const autofixCards: any[] = Trello.request(`lists/${trelloLists.Autofix.id}/cards`, { method: 'get' });
+  const toDoCards: any[] = Trello.request(`lists/${trelloLists.ToDo.id}/cards`, { method: 'get' });
+  for (const card of autofixCards.concat(
+    toDoCards.filter(card => new Date(card.due) < new Date())
+  )) {
+    const items: { id: string; isFolder: boolean }[] = deletedItems[card.id];
+    items.forEach(restoreItem);
+    slack.bot.postMessage(drivelog_admin_id, `${card.name} (${card.desc}) を復元しました。`, {
+      icon_emoji: ':google_drive:',
+      username: 'UpdateNotifier'
+    });
+    Trello.request(`cards/${card.id}`, { method: 'put' }, { closed: true });
+    delete deletedItems[card.id];
+  }
+  properties.setProperty('checkUpdate.deletedItems', JSON.stringify(deletedItems));
+};
+
+global.checkTrello = checkTrello;
 
 global.checkUpdate = checkUpdate;
