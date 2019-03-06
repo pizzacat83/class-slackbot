@@ -6,8 +6,7 @@ global.slackCommands = {};
 
 const getFormulaImageURL = (tex: string): string =>
   'https://chart.googleapis.com/chart?cht=tx&chl=' +
-  encodeURIComponent(tex) +
-  '&ts=' + Date.now().toString();
+  encodeURIComponent(tex);
 
 
 /// #if DEBUG
@@ -20,29 +19,26 @@ const formula = (params: SlackCommandParams): {} => {
   const re = /([^]*?)((\$\$?)[^]+?\3)/g;
   const attachments = [];
   let last_index = 0;
-  const attachment_color = '#ffffff';
   while (1) {
     const match = re.exec(params.text);
     if (!match) break;
-    const [_, text, tex] = match;
+    const [_, pretext, tex] = match;
     last_index += _.length;
     attachments.push({
-      text,
-      color: attachment_color,
+      pretext,
       image_url: getFormulaImageURL(tex)
     });
   }
   if (last_index === 0) {
     // regard full text as TeX
     attachments.push({
-      color: attachment_color,
       image_url: getFormulaImageURL(params.text)
     });
   } else if (last_index < params.text.length) {
     // add strings left
     attachments.push({
-      text: params.text.substr(last_index),
-      color: attachment_color
+      pretext: params.text.substr(last_index),
+      color: '#ffffff'
     });
   }
   return {
