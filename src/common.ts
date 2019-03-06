@@ -41,6 +41,29 @@ export interface SlackCommandParams {
   trigger_id: string;
 }
 
+export const queryString = (params: any): string => {
+  return (
+    '?' +
+    Object.keys(params)
+      .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
+      .join('&')
+  );
+};
+
+export const listToObject = (src: any[], key: string = 'id') => {
+  const res = {};
+  for (const item of src) {
+    res[item[key]] = item;
+  }
+  return res;
+};
+
+export const splitList = <T>(list: T[], chunk_length: number): T[][] => {
+  return new Array(Math.ceil(list.length / chunk_length))
+    .fill(null)
+    .map((_, i) => list.slice(chunk_length * i, chunk_length * (i + 1)));
+};
+
 export const listMessages = (
   channel: string,
   option: { latest?: string | number; oldest?: string | number } = {}
@@ -61,13 +84,15 @@ export const listMessages = (
 global.listMessages = listMessages;
 
 export const uploadTextFileToSlack = (channels: string[], content: string, comment: string) => {
-  return UrlFetchApp.fetch('https://slack.com/api/files.upload', {
-    method: 'post',
-    payload: {
-      content,
-      initial_comment: comment,
-      channels: channels.join(',')
-    },
-    headers: { Authorization: 'Bearer ' + bot_token }
-  });
+  return JSON.parse(
+    UrlFetchApp.fetch('https://slack.com/api/files.upload', {
+      method: 'post',
+      payload: {
+        content,
+        initial_comment: comment,
+        channels: channels.join(',')
+      },
+      headers: { Authorization: 'Bearer ' + bot_token }
+    }).getContentText()
+  );
 };
