@@ -241,18 +241,13 @@ const checkUpdate = (_, since?: string): void => {
           { method: 'post' },
           { name: 'アイテム一覧' }
         );
-        Trello.request('checklists', { method: 'post' }, { idCard: card.id, name: 'アイテム一覧' });
         for (const target of targets) {
           const driveItem = getDriveItemfromTarget(target);
           Trello.request(
             `checklists/${checklist.id}/checkItems`,
             { method: 'post' },
             {
-              name:
-                getPath(driveItem) +
-                (targets.length <= 20
-                  ? ' ' + driveItem.url || (driveItem.url = driveItem.content.getUrl())
-                  : '')
+              name: getPath(driveItem) + ' ' + driveItem.url || (driveItem.url = driveItem.content.getUrl())
             }
           );
         }
