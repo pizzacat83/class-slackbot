@@ -36,10 +36,10 @@ describe('slackCommands.formula', () => {
       return slackCommands.formula(e);
     });
     expect(res.response_type).toBe('in_channel');
-    expect(res.attachments).toHaveLength(1);
-    const attachment = res.attachments[0];
-    expect(attachment.image_url).toBeTruthy();
-    expect(typeof attachment.image_url).toBe('string');
+    expect(res.blocks).toHaveLength(1);
+    const block = res.blocks[0];
+    expect(block.image_url).toBeTruthy();
+    expect(typeof block.image_url).toBe('string');
   });
 
   it('returns response to text including $...$ and $$...$$ with post-text', async () => {
@@ -50,13 +50,12 @@ describe('slackCommands.formula', () => {
       return slackCommands.formula(e);
     });
     expect(res.response_type).toBe('in_channel');
-    expect(res.attachments).toHaveLength(3);
-    expect(res.attachments[0].text).toBe('abc ');
-    expect(res.attachments[0].image_url).toContain(encodeURIComponent('$def$'));
-    expect(res.attachments[1].text).toBe('g h\ni');
-    expect(res.attachments[1].image_url).toContain(encodeURIComponent('$$j\nk$$'));
-    expect(res.attachments[2].text).toBe('lmn');
-    expect(res.attachments[2].image_url).toBeUndefined();
+    expect(res.blocks).toHaveLength(5);
+    expect(res.blocks[0].text.text).toBe('abc ');
+    expect(res.blocks[1].image_url).toContain(encodeURIComponent('$def$'));
+    expect(res.blocks[2].text.text).toBe('g h\ni');
+    expect(res.blocks[3].image_url).toContain(encodeURIComponent('$$j\nk$$'));
+    expect(res.blocks[4].text.text).toBe('lmn');
   });
 
   it('returns response to text including $...$ without post-text', async () => {
@@ -67,11 +66,11 @@ describe('slackCommands.formula', () => {
       return slackCommands.formula(e);
     });
     expect(res.response_type).toBe('in_channel');
-    expect(res.attachments).toHaveLength(2);
-    expect(res.attachments[0].text).toBe('abc ');
-    expect(res.attachments[0].image_url).toContain(encodeURIComponent('$def$'));
-    expect(res.attachments[1].text).toBe('g h\ni');
-    expect(res.attachments[1].image_url).toContain(encodeURIComponent('$$j\nk$$'));
+    expect(res.blocks).toHaveLength(4);
+    expect(res.blocks[0].text.text).toBe('abc ');
+    expect(res.blocks[1].image_url).toContain(encodeURIComponent('$def$'));
+    expect(res.blocks[2].text.text).toBe('g h\ni');
+    expect(res.blocks[3].image_url).toContain(encodeURIComponent('$$j\nk$$'));
   });
 });
 
