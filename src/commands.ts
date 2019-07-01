@@ -5,9 +5,7 @@ declare var global: any;
 global.slackCommands = {};
 
 const getFormulaImageURL = (tex: string): string =>
-  'https://chart.googleapis.com/chart?cht=tx&chl=' +
-  encodeURIComponent(tex);
-
+  'https://chart.googleapis.com/chart?cht=tx&chl=' + encodeURIComponent(tex);
 
 /// #if DEBUG
 global.getFormulaImageURL = getFormulaImageURL;
@@ -17,33 +15,48 @@ const formula = (params: SlackCommandParams): {} => {
   // if you want to change username or icon,
   // you should use postMessage instead.
   const re = /([^]*?)((\$\$?)[^]+?\3)/g;
-  const attachments = [];
+  const blocks = [];
   let last_index = 0;
   while (1) {
     const match = re.exec(params.text);
     if (!match) break;
-    const [_, pretext, tex] = match;
+    const [_, text, tex] = match;
     last_index += _.length;
-    attachments.push({
-      pretext,
-      image_url: getFormulaImageURL(tex)
+    if (text) {
+      blocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text
+        }
+      });
+    }
+    blocks.push({
+      type: 'image',
+      image_url: getFormulaImageURL(tex),
+      alt_text: tex
     });
   }
   if (last_index === 0) {
     // regard full text as TeX
-    attachments.push({
-      image_url: getFormulaImageURL(params.text)
+    blocks.push({
+      type: 'image',
+      image_url: getFormulaImageURL(params.text),
+      alt_text: params.text
     });
   } else if (last_index < params.text.length) {
     // add strings left
-    attachments.push({
-      pretext: params.text.substr(last_index),
-      color: '#ffffff'
+    blocks.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: params.text.substr(last_index)
+      }
     });
   }
   return {
     response_type: 'in_channel',
-    attachments
+    blocks
   };
 };
 
