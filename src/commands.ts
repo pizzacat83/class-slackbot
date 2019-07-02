@@ -7,21 +7,24 @@ global.slackCommands = {};
 const getFormulaImageURL = (tex: string): string =>
   'https://chart.googleapis.com/chart?cht=tx&chl=' + encodeURIComponent(tex);
 
+const formula_regexp = /(^|[^\\])((\$\$?)[^]*?[^\\]\3)/g;
+
 /// #if DEBUG
 global.getFormulaImageURL = getFormulaImageURL;
+global.formula_regexp = formula_regexp;
 /// #endif
 
 const formula = (params: SlackCommandParams): {} => {
   // if you want to change username or icon,
   // you should use postMessage instead.
-  const re = /([^]*?)((\$\$?)[^]+?\3)/g;
+  const re = new RegExp(formula_regexp.source, 'g');
   const blocks = [];
   let last_index = 0;
   while (1) {
     const match = re.exec(params.text);
     if (!match) break;
-    const [_, text, tex] = match;
-    last_index += _.length;
+    const [whole, , tex] = match;
+    const text = params.text.substring(last_index, match.index + whole.length - tex.length);
     if (text) {
       blocks.push({
         type: 'section',
@@ -36,6 +39,8 @@ const formula = (params: SlackCommandParams): {} => {
       image_url: getFormulaImageURL(tex),
       alt_text: tex
     });
+    last_index = match.index + whole.length;
+    re.lastIndex--;
   }
   if (last_index === 0) {
     // regard full text as TeX
